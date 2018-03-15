@@ -73,7 +73,7 @@ std::vector<float> CaffeClassifier::classifyImages(const std::vector<cv::Mat>& i
     for (int l = 0; l < results[0]->count() / results[0]-> channels(); l++)
     {
       predictions.push_back(out[2 * l + 1] - out[2 * l]);
-//      std::cout << "positive score: " << out[2 * l + 1] << ", negative score: " << out[2 * l] << "\n";
+      // std::cout << "total score: " << (out[2 * l + 1] - out[2 * l]) << ", positive score: " << out[2 * l + 1] << ", negative score: " << out[2 * l] << "\n";
     }
   }
 

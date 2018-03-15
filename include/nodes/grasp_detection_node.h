@@ -164,7 +164,7 @@ private:
   gpd::GraspConfig convertToGraspMsg(const Grasp& hand);
 
   visualization_msgs::MarkerArray convertToVisualGraspMsg(const std::vector<Grasp>& hands, double outer_diameter,
-    double hand_depth, double finger_width, double hand_height, const std::string& frame_id);
+    double hand_depth, double finger_width, double hand_height, const std::string& frame_id, bool print_red);
 
   visualization_msgs::Marker createFingerMarker(const Eigen::Vector3d& center, const Eigen::Matrix3d& frame,
     double length, double width, double height, int id, const std::string& frame_id);

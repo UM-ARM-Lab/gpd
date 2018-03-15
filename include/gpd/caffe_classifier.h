@@ -29,10 +29,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef CAFFE_CLASSIFIER_H_
 #define CAFFE_CLASSIFIER_H_
 
+//#define USE_OPENCV 1 //new
 
 // System
 #include <string>
@@ -42,6 +42,7 @@
 #include "caffe/caffe.hpp"
 #include "caffe/layers/memory_data_layer.hpp"
 #include "caffe/util/io.hpp"
+// #include "../../../../Caffe/include/caffe/util/io.hpp"
 
 // OpenCV
 #include <opencv2/core/core.hpp>

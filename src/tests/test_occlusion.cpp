@@ -1,3 +1,5 @@
+//#define USE_OPENCV 1 //new
+
 #include <gpg/candidates_generator.h>
 #include <gpg/cloud_camera.h>
 #include <gpg/grasp.h>

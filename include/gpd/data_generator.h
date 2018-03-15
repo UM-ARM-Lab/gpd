@@ -1,10 +1,13 @@
 #ifndef DATA_GENERATOR_H_
 #define DATA_GENERATOR_H_
 
+//#define USE_OPENCV 1 //new
 
 // Caffe
 #include <caffe/util/io.hpp>
 #include <caffe/util/db.hpp>
+// #include <../../../../Caffe/include/caffe/util/io.hpp>
+// #include <../../../../Caffe/include/caffe/util/db.hpp>
 
 // OpenCV
 #include <opencv2/opencv.hpp>

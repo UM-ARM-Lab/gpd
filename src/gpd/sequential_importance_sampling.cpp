@@ -200,7 +200,7 @@ std::vector<Grasp> SequentialImportanceSampling::detectGrasps(const CloudCamera&
 
 void SequentialImportanceSampling::preprocessPointCloud(CloudCamera& cloud_cam)
 {
-  std::cout << "Processing cloud with: " << cloud_cam.getCloudOriginal()->size() << " points.\n";
+  std::cout << "Processing cloud with: " << cloud_cam.getCloudOriginal()->size() << " points.\n"; 
   cloud_cam.filterWorkspace(workspace_);
   std::cout << "After workspace filtering: " << cloud_cam.getCloudProcessed()->size() << " points left.\n";
   cloud_cam.voxelizeCloud(0.003);

@@ -87,8 +87,19 @@ void GraspDetectionNode::run()
       // visualize grasps in rviz
       if (use_rviz_)
       {
-        grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, 0.1, 0.06, 0.01, 0.02, frame_));
+        // grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, 0.1, 0.06, 0.01, 0.02, frame_));
+        grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, 0.1, 0.06, 0.01, 0.02, frame_,0));
       }
+      //NEW to print best grasp in red
+      if (use_rviz_)
+      {
+        std::vector<Grasp> best_grasp (1); 
+        best_grasp[0] = grasps[0];
+        grasps_rviz_pub_.publish(convertToVisualGraspMsg(best_grasp, 0.1, 0.06, 0.01, 0.02, frame_,1));
+      }
+      // gpd::GraspConfigList test_grasps_msg = createGraspListMsg(grasps);
+      // ROS_INFO_STREAM(test_grasps_msg);
+      // END NEW
 
       // reset the system
       has_cloud_ = false;
@@ -127,7 +138,8 @@ std::vector<Grasp> GraspDetectionNode::detectGraspPosesInTopic()
   // Publish the selected grasps.
   gpd::GraspConfigList selected_grasps_msg = createGraspListMsg(grasps);
   grasps_pub_.publish(selected_grasps_msg);
-  ROS_INFO_STREAM("Published " << selected_grasps_msg.grasps.size() << " highest-scoring grasps.");
+  ROS_INFO_STREAM("Published " << selected_grasps_msg.grasps.size() << " highest-scoring grasps.");\
+  // ROS_INFO_STREAM(selected_grasps_msg);
 
   return grasps;
 }
@@ -323,7 +335,7 @@ gpd::GraspConfig GraspDetectionNode::convertToGraspMsg(const Grasp& hand)
 
 
 visualization_msgs::MarkerArray GraspDetectionNode::convertToVisualGraspMsg(const std::vector<Grasp>& hands,
-  double outer_diameter, double hand_depth, double finger_width, double hand_height, const std::string& frame_id)
+  double outer_diameter, double hand_depth, double finger_width, double hand_height, const std::string& frame_id, bool print_red) // NEW bool print_red
 {
   double width = outer_diameter;
   double hw = 0.5 * width;
@@ -347,6 +359,16 @@ visualization_msgs::MarkerArray GraspDetectionNode::convertToVisualGraspMsg(cons
     left_finger = createFingerMarker(left_center, hands[i].getFrame(), hand_depth, finger_width, hand_height, i*3, frame_id);
     right_finger = createFingerMarker(right_center, hands[i].getFrame(), hand_depth, finger_width, hand_height, i*3+1, frame_id);
     approach = createFingerMarker(approach_center, hands[i].getFrame(), 0.08, finger_width, hand_height, i*3+2, frame_id);
+
+    //NEW Best grasp shows up in red
+    if (print_red == 1)
+    {
+      base.color.r = 1; base.color.g = 0; base.color.b = 0;
+      left_finger.color.r = 1; left_finger.color.b = 0; left_finger.color.g = 0;
+      right_finger.color.r = 1; right_finger.color.b = 0; right_finger.color.g = 0;
+      approach.color.r = 1; approach.color.b = 0; approach.color.g = 0;
+    }
+    //END NEW
 
     marker_array.markers.push_back(left_finger);
     marker_array.markers.push_back(right_finger);

@@ -158,6 +158,8 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     }
   }
 
+  // ROS_INFO_STREAM("After pruning/filtering: " << candidates.size()); //NEW
+
   // 3. Classify each grasp candidate. (Note: switch from a list of hypothesis sets to a list of grasp hypotheses)
   std::vector<Grasp> valid_grasps = classifyGraspCandidates(cloud_cam, candidates);
   ROS_INFO_STREAM("Predicted " << valid_grasps.size() << " valid grasps.");
@@ -194,6 +196,12 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
   }
 
   // 5. Select highest-scoring grasps.
+  // //NEW
+  // for (int i = 0; i < clustered_grasps.size(); i++)
+  // {
+  //   std::cout << "NEW Grasp " << i << ": " << clustered_grasps[i].getScore() << "\n";
+  // }
+  // //END NEW
   if (clustered_grasps.size() > num_selected_)
   {
     std::cout << "Partial Sorting the grasps based on their score ... \n";

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(gpd)
 
+## Add our local cmake modules to the list that can be found
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -9,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS cmake_modules eigen_conversions geometry
 
 # PCL
 find_package(PCL REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
@@ -24,16 +27,27 @@ find_path(GENERATOR_LIB_INCLUDE_DIR gpg/grasp.h)
 include_directories(${GENERATOR_LIB_INCLUDE_DIR})
 
 # CAFFE
-IF(NOT EXISTS ${CAFFE_DIR})
+#IF(NOT EXISTS ${CAFFE_DIR})
   SET(CAFFE_DIR "$ENV{CAFFE_DIR}")
-  SET(CAFFE_DIR "/home/andreas/software/caffe/build")
-ENDIF()
+  # SET(CAFFE_DIR "/home/andreas/software/caffe/build")
+  SET(CAFFE_DIR "home/messingj/Documents/grasping/Caffe/build/install")
+#ENDIF()
 MESSAGE("CAFFE_DIR: " ${CAFFE_DIR})
+
+
 find_package(Caffe)
-include_directories(${Caffe_INCLUDE_DIRS})
+
+
+message(STATUS "------------- Cafee include dir ${Caffe_INCLUDE_DIRS}")
+message(STATUS "------------- Cafee libraries ${Caffe_LIBRARIES}")
+message(STATUS "------------- Cafee definitions ${Caffe_DEFINITIONS}")
+
+
+include_directories(SYSTEM ${Caffe_INCLUDE_DIRS})
 add_definitions(${Caffe_DEFINITIONS})
 
 ## Set compiler optimization flags
+#set(CMAKE_CXX_FLAGS "-DNDEBUG -O0 -fopenmp -Wno-deprecated -Wenum-compare -DUSE_OPENCV=1")
 set(CMAKE_CXX_FLAGS "-DNDEBUG -O3 -fopenmp -flto -Wno-deprecated -Wenum-compare")
 # set(CMAKE_CXX_FLAGS "-DNDEBUG -O3 -fopenmp -flto -mavx -mfma -Wno-deprecated -Wenum-compare")
 
@@ -128,7 +142,7 @@ DEPENDS Eigen OpenCV PCL
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_caffe_classifier src/${PROJECT_NAME}/caffe_classifier.cpp)
