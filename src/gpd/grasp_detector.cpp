@@ -158,6 +158,19 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     }
   }
 
+  //NEW
+  std::vector<Grasp> test_grasps = extractHypotheses(candidates);
+  std::cout << "test_grasps.size: " << test_grasps.size() << 
+  "\n";
+  for (int i = 0; i < test_grasps.size()-test_grasps.size()+20; i++)
+  {
+    // std::cout << "NEW candidate " << i << ": " << test_grasps[i].print() << "\n";
+    test_grasps[i].print();
+    std::cout << "------------------------- \n";
+  }
+  //END NEW
+
+
   // ROS_INFO_STREAM("After pruning/filtering: " << candidates.size()); //NEW
 
   // 3. Classify each grasp candidate. (Note: switch from a list of hypothesis sets to a list of grasp hypotheses)

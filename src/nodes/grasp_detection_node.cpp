@@ -368,6 +368,11 @@ visualization_msgs::MarkerArray GraspDetectionNode::convertToVisualGraspMsg(cons
       right_finger.color.r = 1; right_finger.color.b = 0; right_finger.color.g = 0;
       approach.color.r = 1; approach.color.b = 0; approach.color.g = 0;
     }
+
+    base.lifetime = ros::Duration();
+    left_finger.lifetime = ros::Duration();
+    right_finger.lifetime = ros::Duration();
+    approach.lifetime = ros::Duration();
     //END NEW
 
     marker_array.markers.push_back(left_finger);
