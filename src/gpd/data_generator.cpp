@@ -25,7 +25,8 @@ CandidatesGenerator* DataGenerator::createCandidatesGenerator(ros::NodeHandle& n
   node.param("finger_width", hand_search_params.finger_width_, 0.01);
   node.param("hand_outer_diameter", hand_search_params.hand_outer_diameter_, 0.09);
   node.param("hand_depth", hand_search_params.hand_depth_, 0.06);
-  node.param("hand_height", hand_search_params.hand_height_, 0.02);
+  node.param("hand_height_single", hand_search_params.hand_height_single_, 0.02);
+  node.param("hand_height_double_", hand_search_params.hand_height_double_, 0.04);
   node.param("init_bite", hand_search_params.init_bite_, 0.015);
 
   // Read local hand search parameters

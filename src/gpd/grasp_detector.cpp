@@ -13,7 +13,8 @@ GraspDetector::GraspDetector(ros::NodeHandle& node)
   node.param("finger_width", hand_search_params.finger_width_, 0.01);
   node.param("hand_outer_diameter", hand_search_params.hand_outer_diameter_, 0.09);
   node.param("hand_depth", hand_search_params.hand_depth_, 0.06);
-  node.param("hand_height", hand_search_params.hand_height_, 0.02);
+  node.param("hand_height_single", hand_search_params.hand_height_single_, 0.02);
+  node.param("hand_height_double", hand_search_params.hand_height_double_, 0.04);
   node.param("init_bite", hand_search_params.init_bite_, 0.015);
   outer_diameter_ = hand_search_params.hand_outer_diameter_;
 
@@ -60,7 +61,7 @@ GraspDetector::GraspDetector(ros::NodeHandle& node)
   // Read grasp image parameters.
   node.param("image_outer_diameter", image_params_.outer_diameter_, hand_search_params.hand_outer_diameter_);
   node.param("image_depth", image_params_.depth_, hand_search_params.hand_depth_);
-  node.param("image_height", image_params_.height_, hand_search_params.hand_height_);
+  node.param("image_height", image_params_.height_, hand_search_params.hand_height_single_);
   node.param("image_size", image_params_.size_, 60);
   node.param("image_num_channels", image_params_.num_channels_, 15);
 
@@ -141,7 +142,7 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     {
       const HandSearch::Parameters& params = candidates_generator_->getHandSearchParams();
       plotter.plotFingers3D(candidates, cloud_cam.getCloudOriginal(), "Valid Grasps", params.hand_outer_diameter_,
-        params.finger_width_, params.hand_depth_, params.hand_height_);
+        params.finger_width_, params.hand_depth_, params.hand_height_single_, params.hand_height_double_);
     }
   }
 
@@ -154,20 +155,20 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     {
       const HandSearch::Parameters& params = candidates_generator_->getHandSearchParams();
       plotter.plotFingers3D(candidates, cloud_cam.getCloudOriginal(), "Valid Grasps", params.hand_outer_diameter_,
-        params.finger_width_, params.hand_depth_, params.hand_height_);
+        params.finger_width_, params.hand_depth_, params.hand_height_single_, params.hand_height_double_);
     }
   }
 
   //NEW
-  std::vector<Grasp> test_grasps = extractHypotheses(candidates);
-  std::cout << "test_grasps.size: " << test_grasps.size() << 
-  "\n";
-  for (int i = 0; i < test_grasps.size()-test_grasps.size()+20; i++)
-  {
-    // std::cout << "NEW candidate " << i << ": " << test_grasps[i].print() << "\n";
-    test_grasps[i].print();
-    std::cout << "------------------------- \n";
-  }
+  // std::vector<Grasp> test_grasps = extractHypotheses(candidates);
+  // std::cout << "test_grasps.size: " << test_grasps.size() << 
+  // "\n";
+  // for (int i = 0; i < test_grasps.size()-test_grasps.size()+20; i++)
+  // {
+  //   // std::cout << "NEW candidate " << i << ": " << test_grasps[i].print() << "\n";
+  //   test_grasps[i].print();
+  //   std::cout << "------------------------- \n";
+  // }
   //END NEW
 
 
@@ -200,7 +201,7 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     {
       const HandSearch::Parameters& params = candidates_generator_->getHandSearchParams();
       plotter.plotFingers3D(clustered_grasps, cloud_cam.getCloudOriginal(), "Valid Grasps", params.hand_outer_diameter_,
-        params.finger_width_, params.hand_depth_, params.hand_height_);
+        params.finger_width_, params.hand_depth_, params.hand_height_single_, params.hand_height_double_);
     }
   }
   else
@@ -240,7 +241,7 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
   {
     const HandSearch::Parameters& params = candidates_generator_->getHandSearchParams();
     plotter.plotFingers3D(selected_grasps, cloud_cam.getCloudOriginal(), "Valid Grasps", params.hand_outer_diameter_,
-      params.finger_width_, params.hand_depth_, params.hand_height_);
+      params.finger_width_, params.hand_depth_, params.hand_height_single_, params.hand_height_double_);
   }
 
   return selected_grasps;
@@ -343,7 +344,7 @@ std::vector<Grasp> GraspDetector::classifyGraspCandidates(const CloudCamera& clo
     Plot plotter;
     const HandSearch::Parameters& params = candidates_generator_->getHandSearchParams();
     plotter.plotFingers3D(valid_grasps, cloud_cam.getCloudOriginal(), "Valid Grasps", params.hand_outer_diameter_,
-      params.finger_width_, params.hand_depth_, params.hand_height_);
+      params.finger_width_, params.hand_depth_, params.hand_height_single_, params.hand_height_double_);
   }
 
   return valid_grasps;

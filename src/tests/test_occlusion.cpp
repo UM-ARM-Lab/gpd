@@ -47,7 +47,8 @@ int main(int argc, char* argv[])
   hand_search_params.finger_width_ = 0.01;
   hand_search_params.hand_outer_diameter_ = 0.12;
   hand_search_params.hand_depth_ = 0.06;
-  hand_search_params.hand_height_ = 0.02;
+  hand_search_params.hand_height_single_ = 0.02;
+  hand_search_params.hand_height_double_ = 0.04;
   hand_search_params.init_bite_ = 0.015;
 
   // Local hand search parameters

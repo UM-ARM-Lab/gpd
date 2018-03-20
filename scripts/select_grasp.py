@@ -72,6 +72,9 @@ np_cloud = np.concatenate([np_cloud,table_points])
 # with open("dist_from_plane.csv","w") as test_file: # NEW
 #     for i in dist:
 #         test_file.write("%.4f, \n" % i)
+with open("test_pcd.txt","w") as test_file: # NEW
+    for i in np_cloud:
+        test_file.write(str(i[0])+" "+str(i[1])+" "+str(i[2])+"\n")
 
 # print(np.dot(np.dot(np.linalg.pinv(np.dot(np.transpose(A),A)),np.transpose(A)),X[:,2])) # NEW
 # print(X.shape) # NEW
