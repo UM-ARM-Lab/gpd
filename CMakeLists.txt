@@ -34,7 +34,6 @@ include_directories(${GENERATOR_LIB_INCLUDE_DIR})
 #ENDIF()
 MESSAGE("CAFFE_DIR: " ${CAFFE_DIR})
 
-
 find_package(Caffe)
 
 

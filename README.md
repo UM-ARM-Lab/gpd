@@ -145,11 +145,12 @@ to achieve better runtime for a loss in grasp quality. For more details, please 
 
 If you like this package and use it in your own work, please cite our paper(s):
 
-[1] Marcus Gualtieri, Andreas ten Pas, Kate Saenko, and Robert Platt. [**High precision grasp pose detection in dense 
-clutter**](http://arxiv.org/abs/1603.01564). IROS 2016. 598-605.
+[1] Andreas ten Pas, Marcus Gualtieri, Kate Saenko, and Robert Platt. [**Grasp Pose Detection in Point 
+Clouds**](http://arxiv.org/abs/1706.09911). The International Journal of Robotics Research, Vol 36, Issue 13-14, 
+pp. 1455 - 1473. October 2017.
 
-[2] Andreas ten Pas, Marcus Gualtieri, Kate Saenko, and Robert Platt. [**Grasp Pose Detection in Point 
-Clouds**](http://arxiv.org/abs/1706.09911). Conditionally accepted for IJRR.
+[2] Marcus Gualtieri, Andreas ten Pas, Kate Saenko, and Robert Platt. [**High precision grasp pose detection in dense 
+clutter**](http://arxiv.org/abs/1603.01564). IROS 2016. 598-605.
 
 
 ## 11) Troubleshooting
@@ -157,3 +158,11 @@ Clouds**](http://arxiv.org/abs/1706.09911). Conditionally accepted for IJRR.
 * GCC 4.8: The package [might not compile](https://github.com/atenpas/gpd/issues/14#issuecomment-324789077) with 
 GCC 4.8. This is due to [a bug](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58251) in GCC. **Solution:** Upgrade to 
 GCC 4.9. 
+
+* During `catkin_make`, you get this error: *[...]/caffe/include/caffe/util/cudnn.hpp:8:34: fatal error: caffe/proto/caffe.pb.h: No such file or directory*. **Solution ([source](https://github.com/muupan/dqn-in-the-caffe/issues/3)):**
+    ```
+    # In the directory you installed Caffe to
+    protoc src/caffe/proto/caffe.proto --cpp_out=.
+    mkdir include/caffe/proto
+    mv src/caffe/proto/caffe.pb.h include/caffe/proto
+    ```
