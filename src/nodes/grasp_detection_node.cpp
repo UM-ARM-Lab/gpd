@@ -87,19 +87,15 @@ void GraspDetectionNode::run()
       // visualize grasps in rviz
       if (use_rviz_)
       {
-        // grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, 0.1, 0.06, 0.01, 0.02, frame_));
         grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, 0.1, 0.06, 0.01, 0.02, 0.04, frame_,0));
       }
-      //NEW to print best grasp in red
+      // print best grasp in red
       if (use_rviz_)
       {
         std::vector<Grasp> best_grasp (1); 
         best_grasp[0] = grasps[0];
         grasps_rviz_pub_.publish(convertToVisualGraspMsg(best_grasp, 0.1, 0.06, 0.01, 0.02, 0.04, frame_,1));
       }
-      // gpd::GraspConfigList test_grasps_msg = createGraspListMsg(grasps);
-      // ROS_INFO_STREAM(test_grasps_msg);
-      // END NEW
 
       // reset the system
       has_cloud_ = false;
@@ -360,7 +356,7 @@ visualization_msgs::MarkerArray GraspDetectionNode::convertToVisualGraspMsg(cons
     right_finger = createFingerMarker(right_center, hands[i].getFrame(), hand_depth, finger_width, hand_height_double, i*3+1, frame_id);
     approach = createFingerMarker(approach_center, hands[i].getFrame(), 0.08, finger_width, hand_height_single, i*3+2, frame_id);
 
-    //NEW Best grasp shows up in red
+    // Print best grasp in red
     if (print_red == 1)
     {
       base.color.r = 1; base.color.g = 0; base.color.b = 0;
@@ -369,11 +365,11 @@ visualization_msgs::MarkerArray GraspDetectionNode::convertToVisualGraspMsg(cons
       approach.color.r = 1; approach.color.b = 0; approach.color.g = 0;
     }
 
+    // Keep markers until overwritten
     base.lifetime = ros::Duration();
     left_finger.lifetime = ros::Duration();
     right_finger.lifetime = ros::Duration();
     approach.lifetime = ros::Duration();
-    //END NEW
 
     marker_array.markers.push_back(left_finger);
     marker_array.markers.push_back(right_finger);
