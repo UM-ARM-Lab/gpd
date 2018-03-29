@@ -61,7 +61,7 @@
     <!-- Grasp selection -->
     <param name="min_score_diff" value="0" />
     <param name="min_aperture" value="0.029" />
-    <param name="max_aperture" value="0.072" />
+    <param name="max_aperture" value="0.15" /> <!-- was 0.72 -->
     <param name="num_selected" value="10" />
         
 	</node>

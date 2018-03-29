@@ -21,8 +21,10 @@ def cloudCallback(msg):
     with mutex:
         global cloud
         if len(cloud) == 0:
+            print("reading")
             for p in point_cloud2.read_points(msg):
                 cloud.append([p[0], p[1], p[2]])
+            print("done reading")
         else:
             print("cloud not empty") # NEW
 
@@ -31,7 +33,7 @@ def callback(msg):
     global grasps
     grasps = msg.grasps
 
-def create_occupancy_map(np_cloud,a,b,c,d):
+def create_occupancy_map(np_cloud):
     # Read in transfer function # TO DO: do this better...
     with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/tf.txt","r") as file:
         reader = csv.reader(file, delimiter=',')
@@ -39,7 +41,12 @@ def create_occupancy_map(np_cloud,a,b,c,d):
     ros_tf = np.asarray(ros_tf, dtype=float)
 
     # Rotate points back to original frame
-    temp_pts = np.transpose(np.dot(np.linalg.inv(ros_tf[0:3,0:3]),np.transpose(np_cloud - np.transpose(ros_tf[0:3,3]))))
+    np_cloud = np.transpose(np.dot(np.linalg.inv(ros_tf[0:3,0:3]),np.transpose(np_cloud - np.transpose(ros_tf[0:3,3]))))
+
+    # Equation of plane fit to the data (represents table surface)
+    A = np.c_[np_cloud[:,0], np_cloud[:,1], np.ones(np_cloud.shape[0])]
+    C, _, _, _ = lstsq(A, np_cloud[:,2])
+    a, b, c, d = C[0], C[1], -1., C[2]
 
     # Add plane to point cloud to prevent grasping from under the table
     num_table_pts = 100
@@ -61,6 +68,10 @@ def create_occupancy_map(np_cloud,a,b,c,d):
     np_cloud = np.concatenate([np_cloud,table_points])
 
     np_cloud = ros_tf[0:3, 0:3].dot(np_cloud.transpose()).transpose() + ros_tf[0:3, 3].transpose()
+
+    with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/test_addedPts.txt","w+") as test_file: # NEW
+        for i in np_cloud:
+            test_file.write(str(i[0])+" "+str(i[1])+" "+str(i[2])+"\n")
 
     return np_cloud
 
@@ -97,8 +108,7 @@ else:
     pass
 idx = np.where(dist > 0.001) 
 
-np_cloud_mod = np_cloud
-# np_cloud_mod = create_occupancy_map(np_cloud, a, b, c, d)
+np_cloud_mod = create_occupancy_map(np_cloud)
 
 # Publish point cloud and nonplanar indices.
 pub = rospy.Publisher('cloud_indexed', CloudIndexed, queue_size=1)
