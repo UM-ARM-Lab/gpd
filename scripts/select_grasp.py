@@ -59,10 +59,11 @@ def create_occupancy_map(np_cloud):
     # Add uncertain points as points in cloud
     z_avg = np.mean(z_table) 
     for i in range(len(np_cloud)):
-        if np_cloud[i,2] < z_avg:
+        threshold = 0.025
+        if np_cloud[i,2] < (z_avg - threshold):
             z_fill = np.linspace(z_avg, np_cloud[i,2], num=5)
             new_pts = np.tile([np_cloud[i,0], np_cloud[i,1], 0], (len(z_fill),1))
-            new_pts[:,2] =z_fill
+            new_pts[:,2] = z_fill
             np_cloud = np.concatenate([np_cloud, new_pts])
 
     np_cloud = np.concatenate([np_cloud,table_points])
