@@ -3,6 +3,17 @@ from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 from threading import Lock
 
+import numpy as np
+from scipy.linalg import lstsq
+
+from gpd.msg import CloudIndexed
+from std_msgs.msg import Header, Int64
+from geometry_msgs.msg import Point
+
+from gpd.msg import GraspConfigList
+
+import csv # Remove once passing tf properly
+
 cloud = [] # global variable to store the point cloud
 mutex = Lock()
 
@@ -14,6 +25,48 @@ def cloudCallback(msg):
                 cloud.append([p[0], p[1], p[2]])
         else:
             print("cloud not empty") # NEW
+
+def callback(msg):
+    print("test")
+    global grasps
+    grasps = msg.grasps
+
+def create_occupancy_map(np_cloud,a,b,c,d):
+    # Read in transfer function # TO DO: do this better...
+    with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/tf.txt","r") as file:
+        reader = csv.reader(file, delimiter=',')
+        ros_tf = [data for data in reader]
+    ros_tf = np.asarray(ros_tf, dtype=float)
+
+    # Rotate points back to original frame
+    temp_pts = np.transpose(np.dot(np.linalg.inv(ros_tf[0:3,0:3]),np.transpose(np_cloud - np.transpose(ros_tf[0:3,3]))))
+
+    # Add plane to point cloud to prevent grasping from under the table
+    num_table_pts = 100
+    x_table = np.reshape(np.linspace(np.amin(np_cloud[:,0]),np.amax(np_cloud[:,0]),num_table_pts),(num_table_pts,1))
+    y_table = np.reshape(np.linspace(np.amin(np_cloud[:,1]),np.amax(np_cloud[:,1]),num_table_pts),(num_table_pts,1))
+    xx, yy = np.meshgrid(x_table, y_table)
+    z_table = -(a*xx + b*yy + d)/c
+    table_points = np.concatenate((np.reshape(xx,(num_table_pts**2,1)), np.reshape(yy,(num_table_pts**2,1)), np.reshape(z_table,(num_table_pts**2,1))), axis=1)
+
+    # Add uncertain points as points in cloud
+    z_avg = np.mean(z_table) 
+    for i in range(len(np_cloud)):
+        if np_cloud[i,2] < z_avg:
+            z_fill = np.linspace(z_avg, np_cloud[i,2], num=5)
+            new_pts = np.tile([np_cloud[i,0], np_cloud[i,1], 0], (len(z_fill),1))
+            new_pts[:,2] =z_fill
+            np_cloud = np.concatenate([np_cloud, new_pts])
+
+    np_cloud = np.concatenate([np_cloud,table_points])
+
+    np_cloud = ros_tf[0:3, 0:3].dot(np_cloud.transpose()).transpose() + ros_tf[0:3, 3].transpose()
+
+    return np_cloud
+
+# ---------------------
+# TO DO: Move to Main
+# ---------------------
 
 # Create a ROS node.
 rospy.init_node('select_grasp')
@@ -30,9 +83,6 @@ while True:
             rospy.sleep(0.01)
 
 # Extract the nonplanar indices. Uses a least squares fit AX = b. Plane equation: z = ax + by + c.
-import numpy as np
-from scipy.linalg import lstsq
-
 np_cloud = np.asarray(cloud)
 X = np_cloud
 A = np.c_[X[:,0], X[:,1], np.ones(X.shape[0])]
@@ -47,34 +97,19 @@ else:
     pass
 idx = np.where(dist > 0.001) 
 
-# Add plane to point cloud to prevent grasping from under the table
-num_table_pts = 100
-x_table = np.reshape(np.linspace(np.amin(X[:,0]),np.amax(X[:,0]),num_table_pts),(num_table_pts,1))
-y_table = np.reshape(np.linspace(np.amin(X[:,1]),np.amax(X[:,1]),num_table_pts),(num_table_pts,1))
-xx, yy = np.meshgrid(x_table, y_table)
-z_table = -(a*xx + b*yy + d)/c
-table_points = np.concatenate((np.reshape(xx,(num_table_pts**2,1)), np.reshape(yy,(num_table_pts**2,1)), np.reshape(z_table,(num_table_pts**2,1))), axis=1)
-np_cloud = np.concatenate([np_cloud,table_points])
-
-# with open("modified_pcd.txt","w") as pcd_with_table: # NEW
-#     for i in np_cloud:
-#         pcd_with_table.write(str(i[0])+" "+str(i[1])+" "+str(i[2])+"\n")
-
+np_cloud_mod = np_cloud
+# np_cloud_mod = create_occupancy_map(np_cloud, a, b, c, d)
 
 # Publish point cloud and nonplanar indices.
-from gpd.msg import CloudIndexed
-from std_msgs.msg import Header, Int64
-from geometry_msgs.msg import Point
-
 pub = rospy.Publisher('cloud_indexed', CloudIndexed, queue_size=1)
 
 msg = CloudIndexed()
 header = Header()
 header.frame_id = "/base_link"
 header.stamp = rospy.Time.now()
-msg.cloud_sources.cloud = point_cloud2.create_cloud_xyz32(header, np_cloud.tolist())
+msg.cloud_sources.cloud = point_cloud2.create_cloud_xyz32(header, np_cloud_mod.tolist())
 msg.cloud_sources.view_points.append(Point(0,0,0))
-for i in xrange(np_cloud.shape[0]):
+for i in xrange(np_cloud_mod.shape[0]):
     msg.cloud_sources.camera_source.append(Int64(0))
 for i in idx[0]:
     msg.indices.append(Int64(i))    
@@ -85,14 +120,7 @@ print 'Published cloud with', len(msg.indices), 'indices'
 
 
 # Select a grasp for the robot to execute.
-from gpd.msg import GraspConfigList
-
 grasps = [] # global variable to store grasps
-
-def callback(msg):
-    print("test")
-    global grasps
-    grasps = msg.grasps
     
 # Subscribe to the ROS topic that contains the grasps.
 grasps_sub = rospy.Subscriber('/detect_grasps/clustered_grasps', GraspConfigList, callback)
@@ -109,3 +137,4 @@ grasp = grasps[0] # grasps are sorted in descending order by score
 print 'Selected grasp with score:', grasp.score
 
 print grasp
+
