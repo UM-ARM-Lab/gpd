@@ -13,6 +13,8 @@ from geometry_msgs.msg import Point
 from gpd.msg import GraspConfigList
 
 import csv # Remove once passing tf properly
+# import tf
+from time import sleep
 
 cloud = [] # global variable to store the point cloud
 mutex = Lock()
@@ -21,10 +23,8 @@ def cloudCallback(msg):
     with mutex:
         global cloud
         if len(cloud) == 0:
-            print("reading")
             for p in point_cloud2.read_points(msg):
                 cloud.append([p[0], p[1], p[2]])
-            print("done reading")
         else:
             print("cloud not empty") # NEW
 
@@ -34,6 +34,10 @@ def callback(msg):
     grasps = msg.grasps
 
 def create_occupancy_map(np_cloud):
+    # listener = tf.TransofrmListener()
+    # while not rospy.is_shutdown():
+    #     try:
+    #         (trans, rot) = listener.lookupTransform("table_surface", )
     # Read in transfer function # TO DO: do this better...
     with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/tf.txt","r") as file:
         reader = csv.reader(file, delimiter=',')
@@ -57,16 +61,19 @@ def create_occupancy_map(np_cloud):
     table_points = np.concatenate((np.reshape(xx,(num_table_pts**2,1)), np.reshape(yy,(num_table_pts**2,1)), np.reshape(z_table,(num_table_pts**2,1))), axis=1)
 
     # Add uncertain points as points in cloud
-    z_avg = np.mean(z_table) 
-    for i in range(len(np_cloud)):
-        threshold = 0.025
-        if np_cloud[i,2] < (z_avg - threshold):
-            z_fill = np.linspace(z_avg, np_cloud[i,2], num=5)
-            new_pts = np.tile([np_cloud[i,0], np_cloud[i,1], 0], (len(z_fill),1))
-            new_pts[:,2] = z_fill
-            np_cloud = np.concatenate([np_cloud, new_pts])
+    z_avg = np.mean(z_table)
+    threshold = -0.03
+    pts_above_table = np_cloud[np_cloud[:,2]<(z_avg-threshold)]
+    num_fill = min(10000, (int)(1*len(pts_above_table)))
+    fill_indices = np.random.randint(len(pts_above_table), size=num_fill) 
+    spacing = 0.03 
+    for i in fill_indices:
+        z_fill = np.arange(pts_above_table[i,2], z_avg, spacing)
+        new_pts = np.tile([pts_above_table[i,0], pts_above_table[i,1], 0], (len(z_fill),1))
+        new_pts[:,2] = z_fill
+        np_cloud = np.concatenate([np_cloud, new_pts])
 
-    np_cloud = np.concatenate([np_cloud,table_points])
+    # np_cloud = np.concatenate([np_cloud,table_points])
 
     np_cloud = ros_tf[0:3, 0:3].dot(np_cloud.transpose()).transpose() + ros_tf[0:3, 3].transpose()
 
@@ -109,7 +116,9 @@ else:
     pass
 idx = np.where(dist > 0.001) 
 
+# print("creating occupancy map")
 np_cloud_mod = create_occupancy_map(np_cloud)
+# print(np_cloud_mod.shape)
 
 # Publish point cloud and nonplanar indices.
 pub = rospy.Publisher('cloud_indexed', CloudIndexed, queue_size=1)
