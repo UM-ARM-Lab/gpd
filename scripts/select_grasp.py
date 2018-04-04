@@ -14,7 +14,6 @@ from gpd.msg import GraspConfigList
 
 import csv # Remove once passing tf properly
 # import tf
-from time import sleep
 
 cloud = [] # global variable to store the point cloud
 mutex = Lock()
@@ -38,11 +37,16 @@ def create_occupancy_map(np_cloud):
     # while not rospy.is_shutdown():
     #     try:
     #         (trans, rot) = listener.lookupTransform("table_surface", )
+    
     # Read in transfer function # TO DO: do this better...
-    with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/tf.txt","r") as file:
-        reader = csv.reader(file, delimiter=',')
-        ros_tf = [data for data in reader]
-    ros_tf = np.asarray(ros_tf, dtype=float)
+    try:
+        with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/tf.txt","r") as file:
+            reader = csv.reader(file, delimiter=',')
+            ros_tf = [data for data in reader]
+        ros_tf = np.asarray(ros_tf, dtype=float)
+    except:
+        print("No tf function. Continuing without adding points.")
+        return np_cloud
 
     # Rotate points back to original frame
     np_cloud = np.transpose(np.dot(np.linalg.inv(ros_tf[0:3,0:3]),np.transpose(np_cloud - np.transpose(ros_tf[0:3,3]))))
@@ -64,11 +68,11 @@ def create_occupancy_map(np_cloud):
     z_avg = np.mean(z_table)
     threshold = -0.03
     pts_above_table = np_cloud[np_cloud[:,2]<(z_avg-threshold)]
-    num_fill = min(10000, (int)(1*len(pts_above_table)))
+    num_fill = min(10000, (int)(0.1*len(pts_above_table)))
     fill_indices = np.random.randint(len(pts_above_table), size=num_fill) 
     spacing = 0.03 
     for i in fill_indices:
-        z_fill = np.arange(pts_above_table[i,2], z_avg, spacing)
+        z_fill = np.arange(pts_above_table[i,2], z_avg-threshold, spacing)
         new_pts = np.tile([pts_above_table[i,0], pts_above_table[i,1], 0], (len(z_fill),1))
         new_pts[:,2] = z_fill
         np_cloud = np.concatenate([np_cloud, new_pts])
