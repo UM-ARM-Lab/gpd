@@ -15,7 +15,10 @@ from gpd.msg import GraspConfigList
 import csv # Remove once passing tf properly
 # import tf
 
+from mps_msgs.msg import *
+
 cloud = [] # global variable to store the point cloud
+combinedList = []
 mutex = Lock()
 
 def cloudCallback(msg):
@@ -26,6 +29,20 @@ def cloudCallback(msg):
                 cloud.append([p[0], p[1], p[2]])
         else:
             print("cloud not empty") # NEW
+
+def segmentedCloudCallback(msg):
+    with mutex:
+        global combinedList
+        testCloud = msg.regions
+        # print(testCloud)
+        # rospy.sleep(10)
+        for region in range(len(testCloud)):
+            for pt in range(len(testCloud[region].points)):
+                tempPoint = [testCloud[region].points[pt].x, testCloud[region].points[pt].y, testCloud[region].points[pt].z] 
+                combinedList.append(tempPoint)
+        # for p in mps_msgs.msg.Perception.read_points(msg, field_names=("x","y,","z"),skip_nans=True):
+        #     print("test")
+        #     combinedList.append(p)
 
 def callback(msg):
     print("test")
@@ -44,9 +61,12 @@ def create_occupancy_map(np_cloud):
             reader = csv.reader(file, delimiter=',')
             ros_tf = [data for data in reader]
         ros_tf = np.asarray(ros_tf, dtype=float)
-    except:
-        print("No tf function. Continuing without adding points.")
-        return np_cloud
+        threshold = -0.03 # Set this here because it can be smaller if tf is given
+    except: # If no transformation matrix is availble, assume camera was directly above table, looking straight down
+        print("No tf function found.")
+        ros_tf = np.asarray([[0, -1, 0, 0],[-1, 0, 0, 0],[0, 0, -1, 0],[0, 0, 0, 1]])
+        threshold = -0.1
+        # return np_cloud
 
     # Rotate points back to original frame
     np_cloud = np.transpose(np.dot(np.linalg.inv(ros_tf[0:3,0:3]),np.transpose(np_cloud - np.transpose(ros_tf[0:3,3]))))
@@ -66,7 +86,6 @@ def create_occupancy_map(np_cloud):
 
     # Add uncertain points as points in cloud
     z_avg = np.mean(z_table)
-    threshold = -0.03
     pts_above_table = np_cloud[np_cloud[:,2]<(z_avg-threshold)]
     num_fill = min(10000, (int)(0.1*len(pts_above_table)))
     fill_indices = np.random.randint(len(pts_above_table), size=num_fill) 
@@ -77,11 +96,13 @@ def create_occupancy_map(np_cloud):
         new_pts[:,2] = z_fill
         np_cloud = np.concatenate([np_cloud, new_pts])
 
-    # np_cloud = np.concatenate([np_cloud,table_points])
+    # np_cloud = np.concatenate([np_cloud,table_points]) # Add plane representing table to point point cloud
 
+    # Rotate points back to table frame
     np_cloud = ros_tf[0:3, 0:3].dot(np_cloud.transpose()).transpose() + ros_tf[0:3, 3].transpose()
 
-    with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/test_addedPts.txt","w+") as test_file: # NEW
+    # Write new points to file for debugging purposes
+    with open("/home/messingj/Documents/catkin_ws/src/mps_vision/logs/test_addedPts.txt","w+") as test_file:
         for i in np_cloud:
             test_file.write(str(i[0])+" "+str(i[1])+" "+str(i[2])+"\n")
 
@@ -95,18 +116,34 @@ def create_occupancy_map(np_cloud):
 rospy.init_node('select_grasp')
 
 # Subscribe to the ROS topic that contains the grasps.
-cloud_sub = rospy.Subscriber('/cloud_pcd', PointCloud2, cloudCallback)
+load_from_file = False
+if load_from_file:
+    print("loading .pcd file")
+    cloud_sub = rospy.Subscriber('/cloud_pcd', PointCloud2, cloudCallback)
 
-# Do not move on until cloud is filled
-while True:
-    with mutex:
-        if len(cloud) != 0:
-            break
-        else:
-            rospy.sleep(0.01)
+    # Do not move on until cloud is filled
+    while True:
+        with mutex:
+            if len(cloud) != 0:
+                np_cloud = np.asarray(cloud)
+                break
+            else:
+                rospy.sleep(0.01)
+else:
+    print("waiting to receive point cloud data")
+    cloud_sub = rospy.Subscriber('/segmented_pc', mps_msgs.msg.Perception, segmentedCloudCallback)
+    while True:
+        with mutex:
+            if len(combinedList) != 0:
+                np_cloud = np.asarray(combinedList)
+                break
+            else:
+                rospy.sleep(0.01)
+
+print("point cloud loaded")
 
 # Extract the nonplanar indices. Uses a least squares fit AX = b. Plane equation: z = ax + by + c.
-np_cloud = np.asarray(cloud)
+# np_cloud = np.asarray(cloud)
 X = np_cloud
 A = np.c_[X[:,0], X[:,1], np.ones(X.shape[0])]
 C, _, _, _ = lstsq(A, X[:,2])
@@ -121,6 +158,7 @@ else:
 idx = np.where(dist > 0.001) 
 
 # print("creating occupancy map")
+# np_cloud_mod = np_cloud
 np_cloud_mod = create_occupancy_map(np_cloud)
 # print(np_cloud_mod.shape)
 
