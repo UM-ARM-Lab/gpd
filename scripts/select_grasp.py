@@ -18,7 +18,8 @@ import tf
 from mps_msgs.msg import *
 
 cloud = [] # global variable to store the point cloud
-combinedList = []
+combinedList = [] # global variable to store the point cloud when fed from mps_vision
+pointRegion = [] # global variable to store the region of each point
 mutex = Lock()
 
 def cloudCallback(msg):
@@ -33,6 +34,7 @@ def cloudCallback(msg):
 def segmentedCloudCallback(msg):
     with mutex:
         global combinedList
+        global pointRegion
         testCloud = msg.regions
         # print(testCloud)
         # rospy.sleep(10)
@@ -40,6 +42,7 @@ def segmentedCloudCallback(msg):
             for pt in range(len(testCloud[region].points)):
                 tempPoint = [testCloud[region].points[pt].x, testCloud[region].points[pt].y, testCloud[region].points[pt].z] 
                 combinedList.append(tempPoint)
+                pointRegion.append(region)
         # for p in mps_msgs.msg.Perception.read_points(msg, field_names=("x","y,","z"),skip_nans=True):
         #     print("test")
         #     combinedList.append(p)
@@ -109,7 +112,7 @@ def create_occupancy_map(np_cloud):
     return np_cloud
 
 # ---------------------
-# TO DO: Move to Main
+# TO DO: Move to Main, but be careful about global variables
 # ---------------------
 
 # Create a ROS node.
@@ -124,7 +127,7 @@ rospy.init_node('select_grasp')
 #         (trans,rot) = listener.lookupTransform('/','/table_surface',rospy.Time(0))
 
 
-# Subscribe to the ROS topic that contains the grasps.
+# Subscribe to the ROS topic that contains the point cloud, either from the .pcd file or from the mps_vision code.
 load_from_file = False
 if load_from_file:
     print("loading .pcd file")
@@ -182,8 +185,10 @@ msg.cloud_sources.cloud = point_cloud2.create_cloud_xyz32(header, np_cloud_mod.t
 msg.cloud_sources.view_points.append(Point(0,0,0))
 for i in range(np_cloud.shape[0]):
     msg.cloud_sources.camera_source.append(Int64(0))
+    msg.cloud_sources.regions.append(Int64(pointRegion[i]))
 for i in range(np_cloud.shape[0], np_cloud_mod.shape[0]):
     msg.cloud_sources.camera_source.append(Int64(-1))
+    msg.cloud_sources.regions.append(Int64(-1))
 for i in idx[0]:
     msg.indices.append(Int64(i))    
 s = raw_input('Hit [ENTER] to publish')

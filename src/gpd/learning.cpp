@@ -32,7 +32,7 @@ std::vector<cv::Mat> Learning::createImages(const CloudCamera& cloud_cam,
   PointCloudRGBA::Ptr cloud(new PointCloudRGBA);
   *cloud = *cloud_cam.getCloudProcessed();
   Eigen::Matrix3Xd points = cloud->getMatrixXfMap().cast<double>();
-  PointList point_list(points, cloud_cam.getNormals(), cloud_cam.getCameraSource(), cloud_cam.getViewPoints());
+  PointList point_list(points, cloud_cam.getNormals(), cloud_cam.getCameraSource(), cloud_cam.getRegions(), cloud_cam.getViewPoints());
 
   if (remove_plane_)
   {

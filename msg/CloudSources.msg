@@ -10,3 +10,6 @@ std_msgs/Int64[] camera_source
 
 # A list of camera positions at which the point cloud was acquired.
 geometry_msgs/Point[] view_points
+
+# The region of the segmented cloud which the point corresponds to.
+std_msgs/Int64[] regions

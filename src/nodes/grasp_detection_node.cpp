@@ -83,9 +83,11 @@ void GraspDetectionNode::run()
     {
       // detect grasps in point cloud
       std::vector<Grasp> grasps = detectGraspPosesInTopic();
+      std::cout << "finished detect";
 
       // visualize grasps in rviz
       const HandSearch::Parameters& params = grasp_detector_->getHandSearchParameters();
+      std::cout << "1";
       if (use_rviz_)
       {
         grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, params.hand_outer_diameter_, params.hand_depth_, params.finger_width_, params.hand_height_single_, params.hand_height_double_, frame_,0));
@@ -95,9 +97,9 @@ void GraspDetectionNode::run()
       {
         std::vector<Grasp> best_grasp (1); 
         best_grasp[0] = grasps[0];
-        grasps_rviz_pub_.publish(convertToVisualGraspMsg(best_grasp, params.hand_outer_diameter_, params.hand_depth_, params.finger_width_, params.hand_height_single_, params.hand_height_double_, frame_,1));
-
+        grasps_rviz_pub_.publish(convertToVisualGraspMsg(best_grasp, params.hand_outer_diameter_, params.hand_depth_, params.finger_width_, params.hand_height_single_, params.hand_height_double_, frame_,1));\
       }
+      std::cout << "2";
 
       // reset the system
       has_cloud_ = false;
@@ -268,6 +270,13 @@ void GraspDetectionNode::initCloudCamera(const gpd::CloudSources& msg)
     view_points.col(i) << msg.view_points[i].x, msg.view_points[i].y, msg.view_points[i].z;
   }
 
+  // Set regions
+  Eigen::MatrixXi regions = Eigen::MatrixXi::Zero(1, msg.regions.size());
+    for (int i = 0; i < msg.regions.size(); i++)
+    {
+      regions.col(i) << msg.regions[i].data;
+    }
+
   // Set point cloud.
   if (msg.cloud.fields.size() == 6 && msg.cloud.fields[3].name == "normal_x"
     && msg.cloud.fields[4].name == "normal_y" && msg.cloud.fields[5].name == "normal_z")
@@ -276,10 +285,15 @@ void GraspDetectionNode::initCloudCamera(const gpd::CloudSources& msg)
     pcl::fromROSMsg(msg.cloud, *cloud);
 
     // TODO: multiple cameras can see the same point
+    // Eigen::MatrixXi camera_source = Eigen::MatrixXi::Zero(view_points.cols(), cloud->size());
+    // for (int i = 0; i < msg.camera_source.size(); i++)
+    // {
+    //   camera_source(msg.camera_source[i].data, i) = 1;
+    // }
     Eigen::MatrixXi camera_source = Eigen::MatrixXi::Zero(view_points.cols(), cloud->size());
     for (int i = 0; i < msg.camera_source.size(); i++)
     {
-      camera_source(msg.camera_source[i].data, i) = 1;
+      camera_source.col(i) << msg.camera_source[i].data;
     }
 
     cloud_camera_ = new CloudCamera(cloud, camera_source, view_points);
@@ -290,13 +304,18 @@ void GraspDetectionNode::initCloudCamera(const gpd::CloudSources& msg)
     pcl::fromROSMsg(msg.cloud, *cloud);
 
     // TODO: multiple cameras can see the same point
+    // Eigen::MatrixXi camera_source = Eigen::MatrixXi::Zero(view_points.cols(), cloud->size());
+    // for (int i = 0; i < msg.camera_source.size(); i++)
+    // {
+    //   camera_source(msg.camera_source[i].data, i) = 1;
+    // }
     Eigen::MatrixXi camera_source = Eigen::MatrixXi::Zero(view_points.cols(), cloud->size());
     for (int i = 0; i < msg.camera_source.size(); i++)
     {
-      camera_source(msg.camera_source[i].data, i) = 1;
+      camera_source.col(i) << msg.camera_source[i].data;
     }
 
-    cloud_camera_ = new CloudCamera(cloud, camera_source, view_points);
+    cloud_camera_ = new CloudCamera(cloud, camera_source, view_points, regions);
     std::cout << "view_points:\n" << view_points << "\n";
   }
 }
