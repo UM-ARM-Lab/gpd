@@ -13,7 +13,7 @@ from geometry_msgs.msg import Point
 from gpd.msg import GraspConfigList
 
 import csv # Remove once passing tf properly
-# import tf
+import tf
 
 from mps_msgs.msg import *
 
@@ -115,6 +115,15 @@ def create_occupancy_map(np_cloud):
 # Create a ROS node.
 rospy.init_node('select_grasp')
 
+# Create a ROS node for receiving the tf
+# rospy.init_node('tf_listener')
+# listener = tf.TransofrmListener()
+# rate = rospy.Rate(10)
+# while not rospy.is_shutdown():
+#     try:
+#         (trans,rot) = listener.lookupTransform('/','/table_surface',rospy.Time(0))
+
+
 # Subscribe to the ROS topic that contains the grasps.
 load_from_file = False
 if load_from_file:
@@ -171,8 +180,10 @@ header.frame_id = "/base_link"
 header.stamp = rospy.Time.now()
 msg.cloud_sources.cloud = point_cloud2.create_cloud_xyz32(header, np_cloud_mod.tolist())
 msg.cloud_sources.view_points.append(Point(0,0,0))
-for i in xrange(np_cloud_mod.shape[0]):
+for i in range(np_cloud.shape[0]):
     msg.cloud_sources.camera_source.append(Int64(0))
+for i in range(np_cloud.shape[0], np_cloud_mod.shape[0]):
+    msg.cloud_sources.camera_source.append(Int64(-1))
 for i in idx[0]:
     msg.indices.append(Int64(i))    
 s = raw_input('Hit [ENTER] to publish')
