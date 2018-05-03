@@ -61,12 +61,13 @@ def create_occupancy_map(np_cloud):
             reader = csv.reader(file, delimiter=',')
             ros_tf = [data for data in reader]
         ros_tf = np.asarray(ros_tf, dtype=float)
-        threshold = -0.03 # Set this here because it can be smaller if tf is given
+        threshold = -0.05 # Set this here because it can be smaller if tf is given
     except: # If no transformation matrix is availble, assume camera was directly above table, looking straight down
         print("No tf function found.")
         ros_tf = np.asarray([[0, -1, 0, 0],[-1, 0, 0, 0],[0, 0, -1, 0],[0, 0, 0, 1]])
         threshold = -0.1
         # return np_cloud
+    threshold = threshold*(len(np_cloud)/100000) #tune this. Idea is that as point cloud gets larger, threshold needs to increase because the table equation is going to be pulled up and we want to add points below the table plane.
 
     # Rotate points back to original frame
     np_cloud = np.transpose(np.dot(np.linalg.inv(ros_tf[0:3,0:3]),np.transpose(np_cloud - np.transpose(ros_tf[0:3,3]))))
